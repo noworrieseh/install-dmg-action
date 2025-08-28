@@ -7,7 +7,7 @@ This action mounts a DMG file and runs an installer. Only supported on macOS as 
 | Name      | Description                              | Required | Default |
 | --------- | ---------------------------------------- | -------- | ------- |
 | dmg       | The DMG file to mount. `none` means skip | false    | `none`  |
-| installer | Installer to run. `none` means skip      | false    | `none`  |
+| installer | pkg installer to run. `none` means skip  | false    | `none`  |
 | detach    | Detach Volume                            | false    | `true`  |
 
 ## Outputs
