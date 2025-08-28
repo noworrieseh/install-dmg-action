@@ -29,7 +29,7 @@ runs:
         exit 1
 
     - name: Check configuration
-      if: ${{ input.dmg == 'none' && input.installer == 'none' }}
+      if: ${{ inputs.dmg == 'none' && inputs.installer == 'none' }}
       shell: bash
       run: |
         echo "::error title=⛔ error hint::Need at least one of DMG and installer"
@@ -76,7 +76,7 @@ runs:
       if: ${{ inputs.installer != 'none' }}
       shell: bash
       env:
-        InSTALL: ${{ inputs.installer }}
+        INSTALL: ${{ inputs.installer }}
       run: |
         #INSTALL=${{ inputs.installer }}
         FULL="${VOLUME}/${INSTALL}"
