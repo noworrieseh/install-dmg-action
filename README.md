@@ -1,6 +1,6 @@
 # Install DMG Action
 
-This action mounts a DMG file and runs an installer. Only supported on macOS as it uses the hdiutil command.
+This action mounts a DMG file and runs an installer. Only supported on macOS runners as it uses the hdiutil command.
 
 ## Inputs
 
