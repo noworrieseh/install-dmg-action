@@ -1,0 +1,109 @@
+name: 'Install DMG'
+description: 'Mount a DMG and run an installer'
+inputs:
+  dmg:
+    description: 'The DMG file to mount'
+    required: false
+    default: 'none'
+  installer:
+    description: 'Installer to run'
+    required: false
+    default: 'none'
+  detach:
+    description: 'Detact Volume'
+    required: false
+    default: true
+outputs:
+  directory:
+    description: 'Directory of mounted volume'
+    value: ${{ steps.volume-directory.outputs.directory }}
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Check Runner OS
+      if: ${{ runner.os != 'macOS' }}
+      shell: bash
+      run: |
+        echo "::error title=⛔ error hint::Support macOS Only"
+        exit 1
+
+    - name: Check configuration
+      if: ${{ input.dmg == 'none' && input.installer == 'none' }}
+      shell: bash
+      run: |
+        echo "::error title=⛔ error hint::Need at least one of DMG and installer"
+        exit 1
+
+    - name: Check DMG File
+      if: ${{ inputs.dmg != 'none' }}
+      shell: bash
+      env:
+        DMG: ${{ inputs.dmg }}
+      run: |
+        #DMG=${{ inputs.dmg }}
+        if [ ! -e "${DMG}" ]; then
+          echo "::error title=⛔ error hint::DMG file is missing"
+        exit 1
+        fi
+        hdiutil verify "${DMG}"
+        if [ $? -ne 0 ]; then
+          echo "::error title=⛔ error hint::Problem verifying DMG file"
+          exit 1
+        fi
+        echo "DMG=$DMG" >> ${GITHUB_ENV}
+
+    - name: Mount DMG File
+      if: ${{ inputs.dmg != 'none' }}
+      shell: bash
+      env:
+        DMG: ${{ inputs.dmg }}
+      run: |
+        #DMG=${{ inputs.dmg }}
+        VOLUME=`hdiutil attach "${DMG}" | grep Volumes | sed "s/.*\/Volumes/\/Volumes/g"`
+        if [ -z "${VOLUME}" -o ! -d "${VOLUME}" ]; then
+          echo "::error title=⛔ error hint::Problem mounting DMG file"
+          exit 1
+        fi
+        echo "VOLUME=$VOLUME" >> ${GITHUB_ENV}
+
+    - name: Output volume directory
+      id: volume-directory
+      run: echo "directory=$(echo ${VOLUME})" >> ${GITHUB_OUTPUT}
+      shell: bash
+
+    - name: Check for installer
+      if: ${{ inputs.installer != 'none' }}
+      shell: bash
+      env:
+        InSTALL: ${{ inputs.installer }}
+      run: |
+        #INSTALL=${{ inputs.installer }}
+        FULL="${VOLUME}/${INSTALL}"
+        if [ ! -e "${FULL}" ]; then
+          echo "::error title=⛔ error hint::Installer doesnt exist in DMG"
+          exit 1
+        fi
+        echo "FULL=$FULL" >> ${GITHUB_ENV}
+
+    - name: Run Installer
+      if: ${{ inputs.installer != 'none' }}
+      shell: bash
+      run: |
+        sudo installer -pkg "${FULL}" -target /
+        if [ $? -ne 0 ]; then
+          echo "::error title=⛔ error hint::Problem with running installer"
+          exit 1
+        fi
+
+    - name: Detach volume
+      if: ${{ inputs.detach == 'true' && inputs.dmg != 'none' }}
+      shell: bash
+      run: |
+        hdiutil detach "${VOLUME}"
+        if [ $? -ne 0 ]; then
+          echo "::error title=⛔ error hint::Problem with detaching volume"
+          exit 1
+        fi
+
+
